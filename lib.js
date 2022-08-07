@@ -17,7 +17,7 @@ class MousePosition {
     static #isTracking = false;
 
     #mouseDownHandlers = [];
-    
+    #mouseDownLast = 0;    
 
     constructor () {
         if (MousePosition.#isTracking) {
@@ -29,8 +29,11 @@ class MousePosition {
                 this.y = e.y;
             };
             document.onmousedown = (e) => {
-                for(let i = 0; i < this.#mouseDownHandlers.length; i++) {
-                    this.#mouseDownHandlers[i](this.x, this.y);
+                if (new Date().getTime() - this.#mouseDownLast > 10) {
+                    for(let i = 0; i < this.#mouseDownHandlers.length; i++) {
+                        this.#mouseDownHandlers[i](this.x, this.y);
+                    }
+                    this.#mouseDownLast = new Date().getTime();
                 }
             }
         }
@@ -82,6 +85,17 @@ class Button extends GameObject {
     constructor (x, y, width, height, text, func, textSize, textColor, bgColor) {
         super(x, y, width, height, bgColor);
         this.func = func;
+        this.text = text;
+        this.textSize = textSize;
+        this.textColor = textColor;
+    }
+}
+class Text extends GameObject {
+    text;
+    textSize;
+    textColor;
+    constructor (x, y, text, textSize, textColor) {
+        super(x, y, 0, 0, "transparent");
         this.text = text;
         this.textSize = textSize;
         this.textColor = textColor;
@@ -140,7 +154,14 @@ class Game {
             ctx.fillStyle = gameObject.textColor;
             ctx.fillText(gameObject.text, gameObject.x, gameObject.y);
             // ctx.fillText(gameObject.text, (gameObject.x - gameObject.width / 2), (gameObject.y - gameObject.height / 2));
-        } else {
+        } else if (gameObject instanceof Text) {
+            ctx.font = `${gameObject.textSize}px serif`;
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = gameObject.textColor;
+            ctx.fillText(gameObject.text, gameObject.x, gameObject.y);
+        }
+         else {
             ctx.fillStyle = gameObject.color;
             ctx.fillRect((gameObject.x - gameObject.width / 2), (gameObject.y - gameObject.height / 2), gameObject.width, gameObject.height);
         }
@@ -175,6 +196,12 @@ class Game {
         return obj;
     }
 
+    createText (x, y, text, textSize="12", textColor="#000000") {
+        const obj = new Text(x, y, text, textSize, textColor);
+        this.#objects.push(obj);
+        return obj;
+    }
+
     removeGameObject (gameObject) {
         if (gameObject instanceof Button) {
             this.mousePosition.removeMouseDownHandler(gameObject.clickHandlerID);
@@ -199,6 +226,14 @@ class Game {
 
     isMouseOverGameObject (gameObject) {
         return this.isCoordsOverGameObject(this.mousePosition.x, this.mousePosition.y, gameObject);
+    }
+
+    createGameObjectClickHandler (gameObject, handler) {
+        return this.mousePosition.addMouseDownHandler((x, y) => {
+            if (this.isCoordsOverGameObject(x, y, gameObject)) {
+                handler();
+            }
+        });
     }
 
     // isMouseDownOnGameObject (gameObject) {
