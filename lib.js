@@ -29,6 +29,7 @@ class MousePosition {
                 this.y = e.y;
             };
             document.onmousedown = (e) => {
+                // console.log(this.#mouseDownHandlers);
                 if (new Date().getTime() - this.#mouseDownLast > 10) {
                     for(let i = 0; i < this.#mouseDownHandlers.length; i++) {
                         this.#mouseDownHandlers[i](this.x, this.y);
@@ -51,6 +52,9 @@ class MousePosition {
     }
     removeMouseDownHandler (handler_index) {
         this.#mouseDownHandlers.splice(handler_index, 1);
+    }
+    removeAllMouseDownHandlers () {
+        this.#mouseDownHandlers = [];
     }
 
     stopTracking () {
@@ -211,6 +215,11 @@ class Game {
 
     removeAllGameObjects () {
         this.#objects = [];
+        this.mousePosition.removeAllMouseDownHandlers();
+    }
+
+    clearCanvas () {
+        this.#clearCanvas(this.#CANVAS);
     }
 
     isCoordsOverGameObject (x, y, gameObject) {
@@ -260,6 +269,7 @@ class Game {
     }
 
 }
+
 
 const initGame = (width, height, canvas, fps=60) => {
     canvas.width = width;
